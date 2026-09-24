@@ -19,33 +19,26 @@ String durationFormatter(Duration value) {
 
 Stream<double>? getDoubleDataStream(ErgometerStore? ergstore, String datakey) {
   return ergstore?.erg?.monitorForData({datakey}).map((event) {
-    var data = event[datakey] as double;
-    return data;
+    return event[datakey] as double;
   });
 }
 
 Stream<String>? getStringDataStream(ErgometerStore? ergstore, String datakey) {
   return ergstore?.erg?.monitorForData({datakey}).map((event) {
-    var data = event[datakey].toString();
-    return data;
+    return event[datakey].toString();
   });
 }
 
 Stream<String>? getSplitDataStream(ErgometerStore? ergstore, String datakey) {
   return ergstore?.erg?.monitorForData({datakey}).map((event) {
-    var d = event[datakey];
-    print(d.toDouble());
-    var data = wattsToSplit(d.toDouble(), includeTenths: false);
-    return data;
+    var watts = event[datakey] as num;
+    return wattsToSplit(watts.toDouble(), includeTenths: false);
   });
 }
 
 Stream<String>? getDurationDataStream(
     ErgometerStore? ergstore, String datakey) {
   return ergstore?.erg?.monitorForData({datakey}).map((event) {
-    var data = durationFormatter(
-      event[datakey] as Duration,
-    );
-    return data;
+    return durationFormatter(event[datakey] as Duration);
   });
 }

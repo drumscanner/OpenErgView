@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:settings_ui/settings_ui.dart';
-import 'package:openergview/constants.dart';
 
 import 'devices_list/devices_bloc_provider.dart';
 import 'devices_list/devices_list_view.dart';
-import 'utils.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});

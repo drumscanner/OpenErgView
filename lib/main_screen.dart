@@ -49,7 +49,7 @@ class _MainScreenState extends State<MainScreen>
 
     if (ergstore != null && ergstore!.erg != null) {
       _ergConnectionStatusStream =
-          ergstore!.erg!.connectAndDiscover().asBroadcastStream(
+          ergstore!.erg!.monitorConnectionState().asBroadcastStream(
         onCancel: (controller) {
           print('Stream paused');
           controller.pause();
@@ -66,6 +66,8 @@ class _MainScreenState extends State<MainScreen>
           ?.listen((ErgometerConnectionState connectionState) {
         lastConnectionState = connectionState;
       });
+
+      ergstore!.erg!.connectAndDiscover();
     }
   }
 
@@ -292,6 +294,7 @@ class _MainScreenState extends State<MainScreen>
 
   @override
   void dispose() {
+    _ergConnectionStatus?.cancel();
     super.dispose();
   }
 }

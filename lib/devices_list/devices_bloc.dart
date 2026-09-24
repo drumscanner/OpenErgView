@@ -4,7 +4,6 @@ import 'dart:io';
 // import 'package:fimber/fimber.dart';
 // import '../model/ble_device.dart';
 // import '../repository/device_repository.dart';
-// import 'package:flutter_ble_lib/flutter_ble_lib.dart';
 import 'package:c2bluetooth/c2bluetooth.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:rxdart/rxdart.dart';
@@ -39,9 +38,8 @@ class DevicesBloc {
     bleDevices.clear();
 
     _checkPermissions()
-        // .then((_) => _checkPermissions())
         // .catchError((e) => Fimber.d("Permission check error", ex: e))
-        // .then((_) => _waitForBluetoothPoweredOn())
+        .then((_) => _bleManager.init())
         .then((_) => _startScan());
 
     if (_visibleDevicesController.isClosed) {
@@ -141,7 +139,9 @@ class DevicesBloc {
 
     _visibleDevicesController.add(bleDevices.sublist(0));
 
-    await _checkPermissions().then((_) => _startScan());
+    await _checkPermissions()
+        .then((_) => _bleManager.init())
+        .then((_) => _startScan());
     // .catchError((e) => Fimber.d("Couldn't refresh", ex: e));
   }
 }

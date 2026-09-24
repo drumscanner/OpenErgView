@@ -28,5 +28,7 @@
 	<string>MainMenu</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>OpenErgView uses Bluetooth to connect to your Concept2 PM5 rowing monitor.</string>
 </dict>
 </plist>
