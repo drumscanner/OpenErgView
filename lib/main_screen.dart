@@ -10,6 +10,8 @@ import 'src/components/data_tile.dart';
 import 'src/tabviews/erg_grid_view.dart';
 import 'src/tabviews/erg_staggered_view.dart';
 import 'src/ergometerstore.dart';
+import 'src/recording/recording_controller.dart';
+import 'src/recording/recording_settings.dart';
 import 'utils.dart';
 
 class MainScreen extends StatefulWidget {
@@ -35,6 +37,12 @@ class _MainScreenState extends State<MainScreen>
 
   late ErgometerStore? ergstore;
 
+  // Tracks which erg we've already connected to/started recording for, so that
+  // didChangeDependencies re-running (e.g. on unrelated Provider updates) doesn't
+  // reconnect or start a duplicate recording for the same erg.
+  Ergometer? _connectedErg;
+
+  RecordingController? _recordingController;
 
   @override
   void initState() {
@@ -46,10 +54,12 @@ class _MainScreenState extends State<MainScreen>
     super.didChangeDependencies();
 
     ergstore = Provider.of<ErgometerStore>(context);
+    final erg = ergstore?.erg;
 
-    if (ergstore != null && ergstore!.erg != null) {
-      _ergConnectionStatusStream =
-          ergstore!.erg!.monitorConnectionState().asBroadcastStream(
+    if (erg != null && erg != _connectedErg) {
+      _connectedErg = erg;
+
+      _ergConnectionStatusStream = erg.monitorConnectionState().asBroadcastStream(
         onCancel: (controller) {
           print('Stream paused');
           controller.pause();
@@ -67,7 +77,13 @@ class _MainScreenState extends State<MainScreen>
         lastConnectionState = connectionState;
       });
 
-      ergstore!.erg!.connectAndDiscover();
+      _recordingController?.dispose();
+      _recordingController = RecordingController(
+        erg: erg,
+        settings: Provider.of<RecordingSettings>(context, listen: false),
+      );
+
+      erg.connectAndDiscover();
     }
   }
 
@@ -295,6 +311,7 @@ class _MainScreenState extends State<MainScreen>
   @override
   void dispose() {
     _ergConnectionStatus?.cancel();
+    _recordingController?.dispose();
     super.dispose();
   }
 }

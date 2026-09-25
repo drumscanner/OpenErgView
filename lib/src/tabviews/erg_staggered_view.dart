@@ -74,7 +74,10 @@ class ErgStaggeredView extends StatelessWidget {
                         Expanded(
                             flex: 1,
                             child: DataBar(
-                                icon: Icons.favorite, defaultValue: "0"))
+                                icon: Icons.favorite,
+                                defaultValue: "0",
+                                stream: getStringDataStream(
+                                    ergstore, "status1.heart_rate")))
                       ])),
                   Expanded(
                       child: Row(

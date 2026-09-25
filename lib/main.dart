@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:openergview/src/ergometerstore.dart';
+import 'package:openergview/src/recording/recording_settings.dart';
 import 'package:provider/provider.dart';
 
 import 'main_screen.dart';
 
 void main() {
-  runApp(ChangeNotifierProvider(
-      create: (_) => ErgometerStore(), child: const MyApp()));
+  runApp(MultiProvider(providers: [
+    ChangeNotifierProvider(create: (_) => ErgometerStore()),
+    ChangeNotifierProvider(create: (_) => RecordingSettings()..load()),
+  ], child: const MyApp()));
 }
 
 class MyApp extends StatelessWidget {
