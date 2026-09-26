@@ -6,6 +6,7 @@ import 'package:openergview/constants.dart';
 import 'package:openergview/settings_screen.dart';
 import 'package:provider/provider.dart';
 
+import 'src/average_power_tracker.dart';
 import 'src/components/data_tile.dart';
 import 'src/tabviews/erg_grid_view.dart';
 import 'src/tabviews/erg_staggered_view.dart';
@@ -41,6 +42,8 @@ class _MainScreenState extends State<MainScreen>
   Ergometer? _connectedErg;
 
   RecordingController? _recordingController;
+
+  AveragePowerTracker? _averagePowerTracker;
 
   @override
   void initState() {
@@ -88,6 +91,9 @@ class _MainScreenState extends State<MainScreen>
         settings: Provider.of<RecordingSettings>(context, listen: false),
       );
 
+      _averagePowerTracker?.dispose();
+      _averagePowerTracker = AveragePowerTracker(erg);
+
       erg.connectAndDiscover();
     }
   }
@@ -100,6 +106,8 @@ class _MainScreenState extends State<MainScreen>
 
     _recordingController?.dispose();
     _recordingController = null;
+    await _averagePowerTracker?.dispose();
+    _averagePowerTracker = null;
     await _ergConnectionStatus?.cancel();
     _ergConnectionStatus = null;
     _connectedErg = null;
@@ -121,6 +129,7 @@ class _MainScreenState extends State<MainScreen>
     }
     try {
       await erg.startWorkoutSession();
+      _averagePowerTracker?.reset();
       return true;
     } catch (e) {
       if (mounted) {
@@ -174,7 +183,10 @@ class _MainScreenState extends State<MainScreen>
               : null,
         ),
       ),
-      ErgStaggeredView(ergstore: ergstore, children: [
+      ErgStaggeredView(
+          ergstore: ergstore,
+          averagePaceStream: _averagePowerTracker?.averagePace,
+          children: [
         DataTile(
             title: "distance",
             defaultValue: 1,
@@ -375,6 +387,7 @@ class _MainScreenState extends State<MainScreen>
   void dispose() {
     _ergConnectionStatus?.cancel();
     _recordingController?.dispose();
+    _averagePowerTracker?.dispose();
     super.dispose();
   }
 }
