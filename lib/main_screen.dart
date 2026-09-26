@@ -87,6 +87,26 @@ class _MainScreenState extends State<MainScreen>
     }
   }
 
+  Future<void> _disconnect() async {
+    final erg = _connectedErg;
+    if (erg == null) {
+      return;
+    }
+
+    _recordingController?.dispose();
+    _recordingController = null;
+    await _ergConnectionStatus?.cancel();
+    _ergConnectionStatus = null;
+    _connectedErg = null;
+
+    setState(() {
+      lastConnectionState = ErgometerConnectionState.disconnected;
+    });
+
+    await erg.disconnectOrCancel();
+    ergstore?.erg = null;
+  }
+
   List<Widget> _buildPageIndicator(length, selectedIndex) {
     List<Widget> list = [];
     for (int i = 0; i < length; i++) {
@@ -260,6 +280,12 @@ class _MainScreenState extends State<MainScreen>
                                 }
                               }
                             }),
+                        if (_connectedErg != null)
+                          IconButton(
+                            tooltip: 'Disconnect',
+                            icon: const Icon(Icons.link_off),
+                            onPressed: _disconnect,
+                          ),
                         const Spacer(),
                         if (isPointerDevice(context))
                           IconButton(
