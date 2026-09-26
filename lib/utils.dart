@@ -29,10 +29,12 @@ Stream<String>? getStringDataStream(ErgometerStore? ergstore, String datakey) {
   });
 }
 
-Stream<String>? getSplitDataStream(ErgometerStore? ergstore, String datakey) {
+/// Formats a per-500m pace field (e.g. "status1.current_pace",
+/// "status1.average_pace") - both already reported by the erg itself, rather than something
+/// we'd need to derive from power.
+Stream<String>? getPaceDataStream(ErgometerStore? ergstore, String datakey) {
   return ergstore?.erg?.monitorForData({datakey}).map((event) {
-    var watts = event[datakey] as num;
-    return wattsToSplit(watts.toDouble(), includeTenths: false);
+    return durationToSplit(event[datakey] as Duration, includeTenths: false);
   });
 }
 

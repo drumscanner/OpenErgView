@@ -11,19 +11,7 @@ class ErgStaggeredView extends StatelessWidget {
 
   final ErgometerStore? ergstore;
 
-  /// The current stroke's pace (already formatted, e.g. via wattsToSplit).
-  final Stream<String>? currentPaceStream;
-
-  /// The running average pace (already formatted, e.g. via wattsToSplit) since the workout
-  /// began. Distinct from [currentPaceStream], which shows only the current stroke's pace.
-  final Stream<String>? averagePaceStream;
-
-  const ErgStaggeredView(
-      {super.key,
-      required this.children,
-      this.ergstore,
-      this.currentPaceStream,
-      this.averagePaceStream});
+  const ErgStaggeredView({super.key, required this.children, this.ergstore});
 
   @override
   Widget build(BuildContext context) {
@@ -56,7 +44,11 @@ class ErgStaggeredView extends StatelessWidget {
                                     ergstore, "general.distance"))),
                         Expanded(
                             flex: 1,
-                            child: DataBar(defaultValue: "32", unit: "s/m"))
+                            child: DataBar(
+                                defaultValue: "0",
+                                unit: "s/m",
+                                stream: getStringDataStream(
+                                    ergstore, "status1.stroke_rate")))
                       ])),
                   Expanded(
                       flex: 2,
@@ -69,7 +61,8 @@ class ErgStaggeredView extends StatelessWidget {
                                         wattsToSplit(0, includeTenths: false),
                                     unit: "/500m",
                                     fontSize: 64,
-                                    stream: currentPaceStream))
+                                    stream: getPaceDataStream(
+                                        ergstore, "status1.current_pace")))
                           ])),
                   Expanded(
                       child: Row(
@@ -99,7 +92,8 @@ class ErgStaggeredView extends StatelessWidget {
                                 defaultValue:
                                     wattsToSplit(0, includeTenths: false),
                                 unit: "ave/500",
-                                stream: averagePaceStream))
+                                stream: getPaceDataStream(
+                                    ergstore, "status1.average_pace")))
                       ])),
                 ])),
         SizedBox(
