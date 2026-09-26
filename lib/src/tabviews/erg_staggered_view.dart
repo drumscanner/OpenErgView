@@ -11,14 +11,18 @@ class ErgStaggeredView extends StatelessWidget {
 
   final ErgometerStore? ergstore;
 
+  /// The current stroke's pace (already formatted, e.g. via wattsToSplit).
+  final Stream<String>? currentPaceStream;
+
   /// The running average pace (already formatted, e.g. via wattsToSplit) since the workout
-  /// began. Distinct from the "stroke.power" tile above, which shows the current stroke's pace.
+  /// began. Distinct from [currentPaceStream], which shows only the current stroke's pace.
   final Stream<String>? averagePaceStream;
 
   const ErgStaggeredView(
       {super.key,
       required this.children,
       this.ergstore,
+      this.currentPaceStream,
       this.averagePaceStream});
 
   @override
@@ -62,11 +66,10 @@ class ErgStaggeredView extends StatelessWidget {
                             Expanded(
                                 child: DataBar(
                                     defaultValue:
-                                        wattsToSplit(123, includeTenths: false),
+                                        wattsToSplit(0, includeTenths: false),
                                     unit: "/500m",
                                     fontSize: 64,
-                                    stream: getSplitDataStream(
-                                        ergstore, "stroke.power")))
+                                    stream: currentPaceStream))
                           ])),
                   Expanded(
                       child: Row(
@@ -94,7 +97,7 @@ class ErgStaggeredView extends StatelessWidget {
                         Expanded(
                             child: DataBar(
                                 defaultValue:
-                                    wattsToSplit(123, includeTenths: false),
+                                    wattsToSplit(0, includeTenths: false),
                                 unit: "ave/500",
                                 stream: averagePaceStream))
                       ])),
