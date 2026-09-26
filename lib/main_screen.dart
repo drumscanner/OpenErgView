@@ -24,8 +24,6 @@ class MainScreen extends StatefulWidget {
 ///depends on [ErgometerStore]
 class _MainScreenState extends State<MainScreen>
     with SingleTickerProviderStateMixin {
-  //TODO: remove this magic number somehow
-  int _pageCount = 3;
   int _currentIndex = 0;
 
   ErgometerConnectionState lastConnectionState =
@@ -74,7 +72,14 @@ class _MainScreenState extends State<MainScreen>
 
       _ergConnectionStatus = _ergConnectionStatusStream
           ?.listen((ErgometerConnectionState connectionState) {
-        lastConnectionState = connectionState;
+        // Without setState, widgets reading lastConnectionState directly (like the "Start
+        // workout" button's enabled state) wouldn't rebuild until something unrelated
+        // happened to trigger one - e.g. changing pages.
+        if (mounted) {
+          setState(() {
+            lastConnectionState = connectionState;
+          });
+        }
       });
 
       _recordingController?.dispose();
@@ -107,6 +112,25 @@ class _MainScreenState extends State<MainScreen>
     ergstore?.erg = null;
   }
 
+  /// Sends the CSAFE start-workout sequence. Returns whether it succeeded, so the caller can
+  /// decide whether it's safe to navigate to the data page.
+  Future<bool> _startWorkout() async {
+    final erg = ergstore?.erg;
+    if (erg == null) {
+      return false;
+    }
+    try {
+      await erg.startWorkoutSession();
+      return true;
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Failed to start workout: $e')));
+      }
+      return false;
+    }
+  }
+
   List<Widget> _buildPageIndicator(length, selectedIndex) {
     List<Widget> list = [];
     for (int i = 0; i < length; i++) {
@@ -132,6 +156,83 @@ class _MainScreenState extends State<MainScreen>
   Widget build(BuildContext context) {
     final PageController pageController = PageController(initialPage: 0);
 
+    final List<Widget> pages = <Widget>[
+      Center(
+        child: ElevatedButton.icon(
+          icon: const Icon(Icons.play_arrow),
+          label: const Text('Start workout'),
+          onPressed: (ergstore?.erg != null &&
+                  lastConnectionState == ErgometerConnectionState.connected)
+              ? () async {
+                  final started = await _startWorkout();
+                  if (started) {
+                    pageController.animateToPage(1,
+                        duration: const Duration(milliseconds: 500),
+                        curve: Curves.ease);
+                  }
+                }
+              : null,
+        ),
+      ),
+      ErgStaggeredView(ergstore: ergstore, children: [
+        DataTile(
+            title: "distance",
+            defaultValue: 1,
+            stream: getDoubleDataStream(ergstore, "general.distance")),
+        DataTile(
+            title: "Drive Length",
+            defaultValue: 1.27,
+            unit: "m",
+            decimals: 2,
+            stream: getDoubleDataStream(ergstore, "stroke.drive_length"))
+      ]),
+      ErgGridView(
+        children: [
+          DataTile(
+              title: "distance",
+              defaultValue: 1,
+              stream: getDoubleDataStream(ergstore, "general.distance")),
+          DataTile(
+              title: "Drive Length",
+              defaultValue: 1.27,
+              unit: "m",
+              decimals: 2,
+              stream:
+                  getDoubleDataStream(ergstore, "stroke.drive_length")),
+          DataTile(
+              title: "Average Force",
+              defaultValue: 264,
+              unit: "lb",
+              stream: getDoubleDataStream(
+                  ergstore, "stroke.drive_force.average")),
+          DataTile(title: "Drag Factor", defaultValue: 218),
+          //TODO: drive length over drive time
+          DataTile(
+            title: "Drive Speed",
+            defaultValue: 12.10,
+            unit: "m/s",
+            decimals: 2,
+          ),
+          DataTile(
+              title: "Peak Force",
+              defaultValue: 341,
+              unit: "lb",
+              stream: getDoubleDataStream(
+                  ergstore, "stroke.drive_force.max"))
+        ],
+      ),
+      ErgGridView(
+        children: [
+          DataTile(title: "test", defaultValue: 1),
+          DataTile(title: "test", defaultValue: 2),
+          DataTile(title: "test", defaultValue: 3),
+          DataTile(title: "test", defaultValue: 4),
+          DataTile(title: "test", defaultValue: 5),
+          DataTile(title: "test", defaultValue: 6)
+        ],
+      )
+    ];
+
     return SafeArea(
         child: Scaffold(
             body: PageView(
@@ -143,71 +244,7 @@ class _MainScreenState extends State<MainScreen>
                   _currentIndex = newIndex;
                 });
               },
-              children: <Widget>[
-                ErgStaggeredView(ergstore: ergstore, children: [
-                  DataTile(
-                      title: "distance",
-                      defaultValue: 1,
-                      stream:
-                          getDoubleDataStream(ergstore, "general.distance")),
-                  DataTile(
-                      title: "Drive Length",
-                      defaultValue: 1.27,
-                      unit: "m",
-                      decimals: 2,
-                      stream:
-                          getDoubleDataStream(ergstore, "stroke.drive_length"))
-                ]),
-                ErgGridView(
-                  children: [
-                    DataTile(
-                        title: "distance",
-                        defaultValue: 1,
-                        stream:
-                            getDoubleDataStream(ergstore, "general.distance")),
-                    DataTile(
-                        title: "Drive Length",
-                        defaultValue: 1.27,
-                        unit: "m",
-                        decimals: 2,
-                        stream: getDoubleDataStream(
-                            ergstore, "stroke.drive_length")),
-                    DataTile(
-                        title: "Average Force",
-                        defaultValue: 264,
-                        unit: "lb",
-                        stream: getDoubleDataStream(
-                            ergstore, "stroke.drive_force.average")),
-                    DataTile(title: "Drag Factor", defaultValue: 218),
-                    //TODO: drive length over drive time
-                    DataTile(
-                      title: "Drive Speed",
-                      defaultValue: 12.10,
-                      unit: "m/s",
-                      decimals: 2,
-                    ),
-                    DataTile(
-                        title: "Peak Force",
-                        defaultValue: 341,
-                        unit: "lb",
-                        stream: getDoubleDataStream(
-                            ergstore, "stroke.drive_force.max"))
-                  ],
-                ),
-                Center(
-                  child: Text('First Page'),
-                ),
-                ErgGridView(
-                  children: [
-                    DataTile(title: "test", defaultValue: 1),
-                    DataTile(title: "test", defaultValue: 2),
-                    DataTile(title: "test", defaultValue: 3),
-                    DataTile(title: "test", defaultValue: 4),
-                    DataTile(title: "test", defaultValue: 5),
-                    DataTile(title: "test", defaultValue: 6)
-                  ],
-                )
-              ],
+              children: pages,
             ),
             bottomNavigationBar: Container(
               height: kBottomNavigationBarHeight,
@@ -302,14 +339,14 @@ class _MainScreenState extends State<MainScreen>
                                 : null,
                           ),
                         Row(
-                            children:
-                                _buildPageIndicator(_pageCount, _currentIndex)),
+                            children: _buildPageIndicator(
+                                pages.length, _currentIndex)),
                         if (isPointerDevice(context))
                           IconButton(
                             tooltip: 'Next',
                             icon: const Icon(Icons.arrow_forward),
                             disabledColor: Colors.grey,
-                            onPressed: _currentIndex != _pageCount - 1
+                            onPressed: _currentIndex != pages.length - 1
                                 ? () => setState(() {
                                       pageController.animateToPage(
                                           _currentIndex + 1,
